@@ -1,4 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { AuthProvider } from '@/lib/auth-context'
+import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { Login } from '@/pages/Login'
 import { Library } from '@/pages/Library'
 import { Comic } from '@/pages/Comic'
@@ -8,13 +10,36 @@ import { ShareViewer } from '@/pages/ShareViewer'
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/" element={<Library />} />
-        <Route path="/comics/:id" element={<Comic />} />
-        <Route path="/comics/:id/pages/:pageId" element={<PageEditor />} />
-        <Route path="/view/:shareToken" element={<ShareViewer />} />
-      </Routes>
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/view/:shareToken" element={<ShareViewer />} />
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <Library />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/comics/:id"
+            element={
+              <ProtectedRoute>
+                <Comic />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/comics/:id/pages/:pageId"
+            element={
+              <ProtectedRoute>
+                <PageEditor />
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </AuthProvider>
     </BrowserRouter>
   )
 }
