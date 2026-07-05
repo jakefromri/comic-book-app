@@ -1,8 +1,21 @@
 import { supabase } from '@/lib/supabase'
 import type { ComicBook } from '@/lib/comics'
-import type { Tables } from '@/types/database'
+import type { Json, Tables } from '@/types/database'
 
 export type Page = Tables<'pages'>
+
+export type SpeechBubble = {
+  id: string
+  text: string
+  x: number // percentage from left (0-100)
+  y: number // percentage from top (0-100)
+  width: number // percentage of panel width
+  tail: 'left' | 'right' | 'none'
+}
+
+export function getSpeechBubbles(page: Page): SpeechBubble[] {
+  return Array.isArray(page.speech_bubbles) ? (page.speech_bubbles as unknown as SpeechBubble[]) : []
+}
 
 export function getPanelPublicUrl(path: string | null): string | null {
   if (!path) return null
@@ -88,6 +101,28 @@ export async function updatePageNarration(
   const { data, error } = await supabase
     .from('pages')
     .update(narration)
+    .eq('id', pageId)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function updatePageSpeechBubbles(pageId: string, bubbles: SpeechBubble[]): Promise<Page> {
+  const { data, error } = await supabase
+    .from('pages')
+    .update({ speech_bubbles: bubbles as unknown as Json })
+    .eq('id', pageId)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function updatePageNarrationBarText(pageId: string, text: string): Promise<Page> {
+  const { data, error } = await supabase
+    .from('pages')
+    .update({ narration_bar_text: text })
     .eq('id', pageId)
     .select()
     .single()

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Check, Mic as MicIcon, Sparkles, RefreshCw } from 'lucide-react'
+import { ArrowLeft, Check, Mic as MicIcon, Sparkles } from 'lucide-react'
 import { useAuthContext } from '@/hooks/useAuthContext'
 import { supabase } from '@/lib/supabase'
 import {
@@ -9,7 +9,6 @@ import {
   uploadDrawing,
   updatePageNarration,
   updatePageCharacters,
-  getPanelPublicUrl,
   type Page,
 } from '@/lib/pages'
 import type { ComicBook } from '@/lib/comics'
@@ -20,6 +19,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { PhotoCapture } from '@/components/PhotoCapture'
 import { VoiceRecorder } from '@/components/VoiceRecorder'
+import { PanelComposer } from '@/components/PanelComposer'
 
 type VoiceState = 'idle' | 'transcribing' | 'enhancing' | 'review' | 'saving'
 
@@ -367,17 +367,12 @@ export function PageEditor() {
           )}
 
           {!generating && page.panel_url && (
-            <div className="flex flex-col items-center gap-3">
-              <img
-                src={getPanelPublicUrl(page.panel_url) ?? undefined}
-                alt="your generated comic panel"
-                className="w-full max-w-sm rounded-2xl border-2 border-border object-cover"
-              />
-              <Button size="lg" variant="outline" onClick={() => void handleGenerate()}>
-                <RefreshCw className="h-5 w-5" />
-                regenerate
-              </Button>
-            </div>
+            <PanelComposer
+              page={page}
+              generating={generating}
+              onRegenerate={() => void handleGenerate()}
+              onUpdate={setPage}
+            />
           )}
         </section>
       )}
