@@ -9,3 +9,8 @@ dist/
 # working docs — not for the public repo
 HANDOVER.md
 idea.md
+PROJECT_PLAN.md
+scope.md
+architecture.md
+adversarial-review.md
+test-plan.md
