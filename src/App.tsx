@@ -5,6 +5,7 @@ import { Login } from '@/pages/Login'
 import { Library } from '@/pages/Library'
 import { Comic } from '@/pages/Comic'
 import { PageEditor } from '@/pages/PageEditor'
+import { CharacterLibrary } from '@/pages/CharacterLibrary'
 import { ShareViewer } from '@/pages/ShareViewer'
 
 function App() {
@@ -35,6 +36,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <PageEditor />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/characters"
+            element={
+              <ProtectedRoute>
+                <CharacterLibrary />
               </ProtectedRoute>
             }
           />

@@ -1,8 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, Pencil, Trash2, BookOpen, LogOut } from 'lucide-react'
+import { Plus, Pencil, Trash2, BookOpen, LogOut, UserRound } from 'lucide-react'
 import { useAuthContext } from '@/hooks/useAuthContext'
-import { supabase } from '@/lib/supabase'
 import {
   listComics,
   createComic,
@@ -10,6 +9,7 @@ import {
   deleteComic,
   type ComicBookWithCover,
 } from '@/lib/comics'
+import { getPanelPublicUrl } from '@/lib/pages'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -28,11 +28,6 @@ type DialogState =
   | { type: 'rename'; comic: ComicBookWithCover }
   | { type: 'delete'; comic: ComicBookWithCover }
   | null
-
-function coverUrl(path: string | null): string | null {
-  if (!path) return null
-  return supabase.storage.from('panels').getPublicUrl(path).data.publicUrl
-}
 
 export function Library() {
   const { user, signOut } = useAuthContext()
@@ -134,6 +129,11 @@ export function Library() {
             <Plus className="h-5 w-5" />
             new comic
           </Button>
+          <Button size="icon" variant="ghost" asChild title="characters">
+            <Link to="/characters">
+              <UserRound className="h-5 w-5" />
+            </Link>
+          </Button>
           <Button size="icon" variant="ghost" onClick={() => void signOut()} title="sign out">
             <LogOut className="h-5 w-5" />
           </Button>
@@ -157,7 +157,7 @@ export function Library() {
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
           {comics.map((comic) => {
-            const cover = coverUrl(comic.coverUrl)
+            const cover = getPanelPublicUrl(comic.coverUrl)
             return (
               <Card key={comic.id} className="overflow-hidden">
                 <Link to={`/comics/${comic.id}`} className="block">

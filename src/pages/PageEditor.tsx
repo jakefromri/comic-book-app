@@ -1,17 +1,36 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Check, Mic as MicIcon } from 'lucide-react'
+import { ArrowLeft, Check, Mic as MicIcon, Sparkles, RefreshCw } from 'lucide-react'
 import { useAuthContext } from '@/hooks/useAuthContext'
 import { supabase } from '@/lib/supabase'
-import { getComic, getPage, uploadDrawing, updatePageNarration, type Page } from '@/lib/pages'
+import {
+  getComic,
+  getPage,
+  uploadDrawing,
+  updatePageNarration,
+  updatePageCharacters,
+  getPanelPublicUrl,
+  type Page,
+} from '@/lib/pages'
 import type { ComicBook } from '@/lib/comics'
 import { uploadTempAudio, transcribeAudio, enhanceNarration } from '@/lib/voice'
+import { listCharacters, type Character } from '@/lib/characters'
+import { generatePanel, GenerationTimeoutError } from '@/lib/generate'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { PhotoCapture } from '@/components/PhotoCapture'
 import { VoiceRecorder } from '@/components/VoiceRecorder'
 
 type VoiceState = 'idle' | 'transcribing' | 'enhancing' | 'review' | 'saving'
+
+const MAX_CHARACTERS_PER_SCENE = 4
+
+const GENERATING_MESSAGES = [
+  'turning your drawing into a superhero...',
+  'adding energy auras...',
+  'drawing speed lines...',
+  'almost there...',
+]
 
 export function PageEditor() {
   const { id: comicId, pageId } = useParams<{ id: string; pageId: string }>()
@@ -29,6 +48,11 @@ export function PageEditor() {
   const [rawTranscription, setRawTranscription] = useState<string | null>(null)
   const [enhancedNarration, setEnhancedNarration] = useState<string | null>(null)
   const [voiceError, setVoiceError] = useState<string | null>(null)
+
+  const [characters, setCharacters] = useState<Character[]>([])
+  const [generating, setGenerating] = useState(false)
+  const [generatingMessageIndex, setGeneratingMessageIndex] = useState(0)
+  const [generateError, setGenerateError] = useState<string | null>(null)
 
   const refreshDrawingPreview = useCallback((path: string | null) => {
     if (!path) {
@@ -62,6 +86,29 @@ export function PageEditor() {
       cancelled = true
     }
   }, [comicId, pageId, refreshDrawingPreview])
+
+  useEffect(() => {
+    if (!user) return
+    let cancelled = false
+    listCharacters(user.id)
+      .then((data) => {
+        if (!cancelled) setCharacters(data)
+      })
+      .catch(() => {
+        /* character library is optional context — a failed load just hides the picker */
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [user])
+
+  useEffect(() => {
+    if (!generating) return
+    const interval = setInterval(() => {
+      setGeneratingMessageIndex((i) => (i + 1) % GENERATING_MESSAGES.length)
+    }, 2500)
+    return () => clearInterval(interval)
+  }, [generating])
 
   async function handleCapture(file: File) {
     if (!user || !page) return
@@ -120,6 +167,45 @@ export function PageEditor() {
     }
   }
 
+  async function handleToggleCharacter(characterId: string) {
+    if (!page) return
+    const selected = page.characters_in_scene.includes(characterId)
+    if (!selected && page.characters_in_scene.length >= MAX_CHARACTERS_PER_SCENE) return
+
+    const nextIds = selected
+      ? page.characters_in_scene.filter((id) => id !== characterId)
+      : [...page.characters_in_scene, characterId]
+
+    const previousPage = page
+    setPage({ ...page, characters_in_scene: nextIds })
+    try {
+      const updated = await updatePageCharacters(page.id, nextIds)
+      setPage(updated)
+    } catch {
+      setPage(previousPage)
+      setGenerateError("couldn't save that — try again")
+    }
+  }
+
+  async function handleGenerate() {
+    if (!page) return
+    setGenerating(true)
+    setGenerateError(null)
+    setGeneratingMessageIndex(0)
+    try {
+      const panelPath = await generatePanel(page.id)
+      setPage({ ...page, panel_url: panelPath })
+    } catch (err) {
+      setGenerateError(
+        err instanceof GenerationTimeoutError
+          ? "still working on it — check back in a moment, or try again"
+          : "couldn't generate that panel — try again"
+      )
+    } finally {
+      setGenerating(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex min-h-svh items-center justify-center">
@@ -155,7 +241,7 @@ export function PageEditor() {
         <h2 className="mb-3 text-lg font-bold">1. your drawing</h2>
         <PhotoCapture
           previewUrl={drawingPreviewUrl}
-          disabled={photoUploading}
+          disabled={photoUploading || generating}
           onCapture={(file) => void handleCapture(file)}
         />
       </section>
@@ -223,12 +309,78 @@ export function PageEditor() {
         {hasSavedNarration && (
           <Card className="flex flex-col gap-3 p-4">
             <p className="font-bold">{page.enhanced_narration}</p>
-            <Button variant="outline" onClick={handleReRecord}>
+            <Button variant="outline" disabled={generating} onClick={handleReRecord}>
               re-record
             </Button>
           </Card>
         )}
       </section>
+
+      {hasSavedNarration && (
+        <section className="mt-8">
+          <h2 className="mb-3 text-lg font-bold">3. make the panel</h2>
+
+          {characters.length > 0 && (
+            <div className="mb-4">
+              <p className="mb-2 text-sm text-text-muted">
+                who's in this scene? (up to {MAX_CHARACTERS_PER_SCENE})
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {characters.map((character) => {
+                  const selected = page.characters_in_scene.includes(character.id)
+                  return (
+                    <button
+                      key={character.id}
+                      type="button"
+                      disabled={generating}
+                      onClick={() => void handleToggleCharacter(character.id)}
+                      className={`rounded-full border-2 px-4 py-2 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                        selected
+                          ? 'border-accent-orange bg-accent-orange text-white'
+                          : 'border-border bg-surface text-text-primary'
+                      }`}
+                    >
+                      {character.name}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {generateError && <p className="mb-3 text-sm text-accent-red">{generateError}</p>}
+
+          {generating && (
+            <Card className="flex flex-col items-center gap-3 p-8 text-center">
+              <Sparkles className="h-10 w-10 animate-pulse text-accent-orange" />
+              <p className="font-bold text-text-muted">
+                {GENERATING_MESSAGES[generatingMessageIndex]}
+              </p>
+            </Card>
+          )}
+
+          {!generating && !page.panel_url && (
+            <Button size="xl" className="w-full" onClick={() => void handleGenerate()}>
+              <Sparkles className="h-6 w-6" />
+              generate panel
+            </Button>
+          )}
+
+          {!generating && page.panel_url && (
+            <div className="flex flex-col items-center gap-3">
+              <img
+                src={getPanelPublicUrl(page.panel_url) ?? undefined}
+                alt="your generated comic panel"
+                className="w-full max-w-sm rounded-2xl border-2 border-border object-cover"
+              />
+              <Button size="lg" variant="outline" onClick={() => void handleGenerate()}>
+                <RefreshCw className="h-5 w-5" />
+                regenerate
+              </Button>
+            </div>
+          )}
+        </section>
+      )}
     </div>
   )
 }

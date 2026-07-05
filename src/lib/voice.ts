@@ -16,7 +16,7 @@ function extensionForMimeType(mimeType: string): string {
   return 'wav'
 }
 
-async function authHeader(): Promise<HeadersInit> {
+export async function authHeader(): Promise<HeadersInit> {
   const { data } = await supabase.auth.getSession()
   const token = data.session?.access_token
   return token ? { Authorization: `Bearer ${token}` } : {}

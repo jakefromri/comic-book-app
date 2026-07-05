@@ -13,8 +13,15 @@ import {
 import { SortableContext, arrayMove, rectSortingStrategy, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useAuthContext } from '@/hooks/useAuthContext'
-import { supabase } from '@/lib/supabase'
-import { getComic, listPages, addPage, deletePage, reorderPages, type Page } from '@/lib/pages'
+import {
+  getComic,
+  listPages,
+  addPage,
+  deletePage,
+  reorderPages,
+  getPanelPublicUrl,
+  type Page,
+} from '@/lib/pages'
 import type { ComicBook } from '@/lib/comics'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -26,11 +33,6 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog'
-
-function panelUrl(path: string | null): string | null {
-  if (!path) return null
-  return supabase.storage.from('panels').getPublicUrl(path).data.publicUrl
-}
 
 function SortablePageCard({
   page,
@@ -51,7 +53,7 @@ function SortablePageCard({
     transition,
     opacity: isDragging ? 0.5 : 1,
   }
-  const cover = panelUrl(page.panel_url)
+  const cover = getPanelPublicUrl(page.panel_url)
 
   return (
     <Card ref={setNodeRef} style={style} className="overflow-hidden">

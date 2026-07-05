@@ -4,6 +4,11 @@ import type { Tables } from '@/types/database'
 
 export type Page = Tables<'pages'>
 
+export function getPanelPublicUrl(path: string | null): string | null {
+  if (!path) return null
+  return supabase.storage.from('panels').getPublicUrl(path).data.publicUrl
+}
+
 export async function getPage(pageId: string): Promise<Page> {
   const { data, error } = await supabase.from('pages').select('*').eq('id', pageId).single()
   if (error) throw error
@@ -83,6 +88,17 @@ export async function updatePageNarration(
   const { data, error } = await supabase
     .from('pages')
     .update(narration)
+    .eq('id', pageId)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function updatePageCharacters(pageId: string, characterIds: string[]): Promise<Page> {
+  const { data, error } = await supabase
+    .from('pages')
+    .update({ characters_in_scene: characterIds })
     .eq('id', pageId)
     .select()
     .single()
