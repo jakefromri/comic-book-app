@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, Pencil, Trash2, BookOpen, LogOut, UserRound } from 'lucide-react'
+import { Plus, Pencil, Trash2, BookOpen, LogOut, UserRound, Play, Share2, Copy, Check } from 'lucide-react'
 import { useAuthContext } from '@/hooks/useAuthContext'
 import {
   listComics,
@@ -9,7 +9,9 @@ import {
   deleteComic,
   type ComicBookWithCover,
 } from '@/lib/comics'
-import { getPanelPublicUrl } from '@/lib/pages'
+import { getPanelPublicUrl, getSpeechBubbles, listPages } from '@/lib/pages'
+import { getOrCreateShare, shareUrl } from '@/lib/shares'
+import { ComicReader, type ReaderPage } from '@/components/ComicReader'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -37,6 +39,15 @@ export function Library() {
   const [titleInput, setTitleInput] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [reader, setReader] = useState<{ title: string; pages: ReaderPage[] } | null>(null)
+  const [readerLoadingId, setReaderLoadingId] = useState<string | null>(null)
+  const [shareDialog, setShareDialog] = useState<{
+    comic: ComicBookWithCover
+    url: string | null
+    loading: boolean
+    copied: boolean
+    error: string | null
+  } | null>(null)
 
   async function refresh() {
     if (!user) return
@@ -83,6 +94,53 @@ export function Library() {
   function openDelete(comic: ComicBookWithCover) {
     setError(null)
     setDialog({ type: 'delete', comic })
+  }
+
+  async function openReader(comic: ComicBookWithCover) {
+    setReaderLoadingId(comic.id)
+    try {
+      const pages = await listPages(comic.id)
+      setReader({
+        title: comic.title,
+        pages: pages.map((page) => ({
+          id: page.id,
+          panelUrl: getPanelPublicUrl(page.panel_url),
+          displayText: page.narration_bar_text ?? page.enhanced_narration,
+          speechBubbles: getSpeechBubbles(page),
+        })),
+      })
+    } catch {
+      setError("couldn't open that comic — try again")
+    } finally {
+      setReaderLoadingId(null)
+    }
+  }
+
+  function openShare(comic: ComicBookWithCover) {
+    if (!user) return
+    setShareDialog({ comic, url: null, loading: true, copied: false, error: null })
+    getOrCreateShare(user.id, comic.id)
+      .then((share) => {
+        setShareDialog((prev) =>
+          prev && prev.comic.id === comic.id
+            ? { ...prev, url: shareUrl(share.share_token), loading: false }
+            : prev
+        )
+      })
+      .catch(() => {
+        setShareDialog((prev) =>
+          prev && prev.comic.id === comic.id
+            ? { ...prev, loading: false, error: "couldn't create a share link — try again" }
+            : prev
+        )
+      })
+  }
+
+  async function handleCopyShareLink() {
+    if (!shareDialog?.url) return
+    await navigator.clipboard.writeText(shareDialog.url)
+    setShareDialog((prev) => (prev ? { ...prev, copied: true } : prev))
+    setTimeout(() => setShareDialog((prev) => (prev ? { ...prev, copied: false } : prev)), 1500)
   }
 
   async function handleTitleSubmit(e: FormEvent) {
@@ -181,6 +239,23 @@ export function Library() {
                     <Button
                       size="icon"
                       variant="ghost"
+                      onClick={() => void openReader(comic)}
+                      disabled={readerLoadingId === comic.id}
+                      title="read"
+                    >
+                      <Play className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => openShare(comic)}
+                      title="share"
+                    >
+                      <Share2 className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
                       onClick={() => openRename(comic)}
                       title="rename"
                     >
@@ -251,6 +326,34 @@ export function Library() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!shareDialog} onOpenChange={(open) => !open && setShareDialog(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>share "{shareDialog?.comic.title ?? ''}"</DialogTitle>
+            <DialogDescription>anyone with this link can view the comic — no login needed</DialogDescription>
+          </DialogHeader>
+          {shareDialog?.loading ? (
+            <p className="text-text-muted">creating your link...</p>
+          ) : shareDialog?.error ? (
+            <p className="text-sm text-accent-red">{shareDialog.error}</p>
+          ) : shareDialog?.url ? (
+            <div className="flex items-center gap-2">
+              <Input readOnly value={shareDialog.url} onFocus={(e) => e.target.select()} />
+              <Button type="button" size="icon" onClick={() => void handleCopyShareLink()} title="copy link">
+                {shareDialog.copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              </Button>
+            </div>
+          ) : null}
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setShareDialog(null)}>
+              close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {reader && <ComicReader title={reader.title} pages={reader.pages} onClose={() => setReader(null)} />}
     </div>
   )
 }
