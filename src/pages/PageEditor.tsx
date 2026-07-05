@@ -227,7 +227,7 @@ export function PageEditor() {
   const hasSavedNarration = !!page.enhanced_narration && voiceState === 'idle'
 
   return (
-    <div className="mx-auto min-h-svh max-w-xl p-6">
+    <div className="mx-auto min-h-svh max-w-xl p-6 lg:max-w-4xl">
       <header className="mb-6 flex items-center gap-2">
         <Button size="icon" variant="ghost" onClick={() => navigate(`/comics/${comic.id}`)}>
           <ArrowLeft className="h-5 w-5" />
@@ -334,7 +334,7 @@ export function PageEditor() {
                       type="button"
                       disabled={generating}
                       onClick={() => void handleToggleCharacter(character.id)}
-                      className={`rounded-full border-2 px-4 py-2 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                      className={`inline-flex min-h-12 items-center justify-center rounded-full border-2 px-4 py-2 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
                         selected
                           ? 'border-accent-orange bg-accent-orange text-white'
                           : 'border-border bg-surface text-text-primary'

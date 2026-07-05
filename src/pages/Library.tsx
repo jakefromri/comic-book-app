@@ -180,12 +180,12 @@ export function Library() {
 
   return (
     <div className="mx-auto min-h-svh max-w-3xl p-6">
-      <header className="mb-6 flex items-center justify-between">
+      <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">my comics</h1>
         <div className="flex items-center gap-2">
-          <Button size="lg" onClick={openCreate}>
+          <Button size="lg" onClick={openCreate} title="new comic">
             <Plus className="h-5 w-5" />
-            new comic
+            <span className="hidden sm:inline">new comic</span>
           </Button>
           <Button size="icon" variant="ghost" asChild title="characters">
             <Link to="/characters">

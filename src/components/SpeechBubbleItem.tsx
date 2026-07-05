@@ -64,7 +64,7 @@ export function SpeechBubbleItem({
       {editing && (
         <div
           onClick={(e) => e.stopPropagation()}
-          className="absolute left-1/2 top-full z-40 mt-2 w-56 -translate-x-1/2 rounded-xl border-2 border-border bg-surface p-3 shadow-lg"
+          className="absolute left-1/2 top-full z-40 mt-2 w-64 -translate-x-1/2 rounded-xl border-2 border-border bg-surface p-3 shadow-lg"
         >
           <textarea
             autoFocus
@@ -86,7 +86,7 @@ export function SpeechBubbleItem({
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => onTailChange(opt.value)}
                   title={`tail: ${opt.value}`}
-                  className={`flex h-7 w-7 items-center justify-center rounded-md border-2 text-xs ${
+                  className={`flex h-12 w-12 items-center justify-center rounded-md border-2 text-xs ${
                     bubble.tail === opt.value
                       ? 'border-accent-orange bg-accent-orange text-white'
                       : 'border-border text-text-primary'
@@ -101,7 +101,7 @@ export function SpeechBubbleItem({
               onMouseDown={(e) => e.preventDefault()}
               onClick={onDelete}
               title="delete bubble"
-              className="flex h-7 w-7 items-center justify-center rounded-md text-accent-red"
+              className="flex h-12 w-12 items-center justify-center rounded-md text-accent-red"
             >
               <Trash2 className="h-4 w-4" />
             </button>
