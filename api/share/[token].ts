@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { supabaseAdmin } from '../_lib/auth'
+import { supabaseAdmin } from '../_lib/auth.js'
 
 export const config = { runtime: 'nodejs' }
 
