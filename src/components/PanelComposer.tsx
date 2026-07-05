@@ -136,71 +136,75 @@ export function PanelComposer({
   const panelUrl = getPanelPublicUrl(page.panel_url)
 
   return (
-    <div className="flex flex-col items-center gap-3">
-      <div
-        ref={containerRef}
-        onClick={handleContainerClick}
-        className={`relative w-full max-w-sm select-none overflow-hidden rounded-2xl border-2 border-border ${
-          addingBubble ? 'cursor-crosshair' : ''
-        }`}
-      >
-        <img src={panelUrl ?? undefined} alt="your generated comic panel" className="w-full object-cover" />
-
-        <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-          {bubbles.map((bubble) => (
-            <SpeechBubbleItem
-              key={bubble.id}
-              bubble={bubble}
-              editing={editingBubbleId === bubble.id}
-              onStartEdit={() => setEditingBubbleId(bubble.id)}
-              onStopEdit={() => setEditingBubbleId(null)}
-              onTextChange={(text) => handleBubbleTextChange(bubble.id, text)}
-              onTailChange={(tail) => handleBubbleTailChange(bubble.id, tail)}
-              onDelete={() => handleBubbleDelete(bubble.id)}
-            />
-          ))}
-        </DndContext>
-
+    <div className="flex flex-col items-center gap-3 lg:grid lg:grid-cols-[60%_40%] lg:items-start lg:gap-6">
+      <div className="flex w-full flex-col items-center gap-3">
         <div
-          className="absolute inset-x-0 bottom-0 bg-black/70 p-2"
-          onClick={(e) => e.stopPropagation()}
+          ref={containerRef}
+          onClick={handleContainerClick}
+          className={`relative w-full max-w-sm select-none overflow-hidden rounded-2xl border-2 border-border lg:max-w-none ${
+            addingBubble ? 'cursor-crosshair' : ''
+          }`}
         >
-          <textarea
-            value={narrationText}
-            onChange={(e) => {
-              setNarrationText(e.target.value)
-              queueNarrationSave(e.target.value)
-            }}
-            rows={2}
-            placeholder="what's happening in this panel?"
-            className="w-full resize-none border-none bg-transparent text-center text-sm font-bold text-white placeholder:text-white/60 focus:outline-none"
-          />
+          <img src={panelUrl ?? undefined} alt="your generated comic panel" className="w-full object-cover" />
+
+          <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+            {bubbles.map((bubble) => (
+              <SpeechBubbleItem
+                key={bubble.id}
+                bubble={bubble}
+                editing={editingBubbleId === bubble.id}
+                onStartEdit={() => setEditingBubbleId(bubble.id)}
+                onStopEdit={() => setEditingBubbleId(null)}
+                onTextChange={(text) => handleBubbleTextChange(bubble.id, text)}
+                onTailChange={(tail) => handleBubbleTailChange(bubble.id, tail)}
+                onDelete={() => handleBubbleDelete(bubble.id)}
+              />
+            ))}
+          </DndContext>
+
+          <div
+            className="absolute inset-x-0 bottom-0 bg-black/70 p-2"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <textarea
+              value={narrationText}
+              onChange={(e) => {
+                setNarrationText(e.target.value)
+                queueNarrationSave(e.target.value)
+              }}
+              rows={2}
+              placeholder="what's happening in this panel?"
+              className="w-full resize-none border-none bg-transparent text-center text-sm font-bold text-white placeholder:text-white/60 focus:outline-none"
+            />
+          </div>
         </div>
-      </div>
 
-      {addingBubble && (
-        <p className="text-sm font-bold text-accent-orange">tap the panel to place your bubble!</p>
-      )}
-
-      <div className="flex w-full items-center justify-between gap-2">
-        <Button type="button" variant="outline" size="sm" onClick={() => setAddingBubble((v) => !v)}>
-          <MessageSquarePlus className="h-4 w-4" />
-          {addingBubble ? 'cancel' : 'add bubble'}
-        </Button>
-        <span className="text-xs font-bold text-accent-green">
-          {saveStatus === 'saved' ? 'saved ✓' : saveStatus === 'saving' ? 'saving...' : ''}
-        </span>
-        <PlaybackButton text={narrationText} />
-      </div>
-
-      <Button size="lg" variant="outline" disabled={generating} onClick={onRegenerate}>
-        {generating ? (
-          <Sparkles className="h-5 w-5 animate-pulse" />
-        ) : (
-          <RefreshCw className="h-5 w-5" />
+        {addingBubble && (
+          <p className="text-sm font-bold text-accent-orange">tap the panel to place your bubble!</p>
         )}
-        regenerate
-      </Button>
+      </div>
+
+      <div className="flex w-full flex-col items-stretch gap-3 lg:sticky lg:top-6">
+        <div className="flex w-full items-center justify-between gap-2">
+          <Button type="button" variant="outline" size="lg" onClick={() => setAddingBubble((v) => !v)}>
+            <MessageSquarePlus className="h-4 w-4" />
+            {addingBubble ? 'cancel' : 'add bubble'}
+          </Button>
+          <span className="text-xs font-bold text-accent-green">
+            {saveStatus === 'saved' ? 'saved ✓' : saveStatus === 'saving' ? 'saving...' : ''}
+          </span>
+          <PlaybackButton text={narrationText} />
+        </div>
+
+        <Button size="lg" variant="outline" disabled={generating} onClick={onRegenerate}>
+          {generating ? (
+            <Sparkles className="h-5 w-5 animate-pulse" />
+          ) : (
+            <RefreshCw className="h-5 w-5" />
+          )}
+          regenerate
+        </Button>
+      </div>
     </div>
   )
 }
