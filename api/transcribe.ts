@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import OpenAI from 'openai'
 import { toFile } from 'openai/uploads'
-import { requireUser, supabaseAdmin } from './_lib/auth'
+import { requireUser, supabaseAdmin } from './_lib/auth.js'
 
 export const config = { runtime: 'nodejs' }
 

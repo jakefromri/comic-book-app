@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { fal } from '@fal-ai/client'
-import { requireUser, supabaseAdmin } from './_lib/auth'
+import { requireUser, supabaseAdmin } from './_lib/auth.js'
 
 export const config = { runtime: 'nodejs', maxDuration: 60 }
 
