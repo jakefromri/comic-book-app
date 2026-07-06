@@ -17,7 +17,7 @@ function ReaderBubble({ bubble }: { bubble: SpeechBubble }) {
   return (
     <div
       style={{ left: `${bubble.x}%`, top: `${bubble.y}%`, width: `${bubble.width}%` }}
-      className="absolute -translate-x-1/2 -translate-y-1/2"
+      className="absolute z-20 -translate-x-1/2 -translate-y-1/2"
     >
       <div
         className={`rounded-2xl border-2 border-text-primary bg-white px-3 py-2 text-center text-sm font-bold text-text-primary shadow-md ${
@@ -113,8 +113,14 @@ export function ComicReader({
             ))}
 
             {page.displayText && (
-              <div className="absolute inset-x-0 bottom-0 bg-black/70 p-2">
-                <p className="text-center text-sm font-bold text-white">{page.displayText}</p>
+              <div className="absolute inset-x-0 bottom-0 z-10 max-h-[30%] overflow-hidden bg-black/70 p-2">
+                <p
+                  className={`text-center font-bold text-white ${
+                    page.displayText.length > 60 ? 'line-clamp-3 text-xs leading-snug' : 'line-clamp-2 text-sm'
+                  }`}
+                >
+                  {page.displayText}
+                </p>
               </div>
             )}
           </div>
