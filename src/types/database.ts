@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       characters: {
@@ -73,6 +98,8 @@ export type Database = {
           drawing_url: string | null
           enhanced_narration: string | null
           id: string
+          narration_audio_text_hash: string | null
+          narration_audio_url: string | null
           narration_bar_text: string | null
           page_order: number
           panel_url: string | null
@@ -88,6 +115,8 @@ export type Database = {
           drawing_url?: string | null
           enhanced_narration?: string | null
           id?: string
+          narration_audio_text_hash?: string | null
+          narration_audio_url?: string | null
           narration_bar_text?: string | null
           page_order: number
           panel_url?: string | null
@@ -103,6 +132,8 @@ export type Database = {
           drawing_url?: string | null
           enhanced_narration?: string | null
           id?: string
+          narration_audio_text_hash?: string | null
+          narration_audio_url?: string | null
           narration_bar_text?: string | null
           page_order?: number
           panel_url?: string | null
@@ -287,6 +318,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {},
   },

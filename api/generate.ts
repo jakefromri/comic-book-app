@@ -7,20 +7,52 @@ export const config = { runtime: 'nodejs', maxDuration: 60 }
 fal.config({ credentials: process.env.FAL_API_KEY })
 
 const STYLE_PREFIX =
-  'Dragon Ball Z anime style comic book panel, vibrant colors, bold linework, dynamic action, ' +
-  'speed lines, energy auras, dramatic lighting, manga shading.'
+  'Redraw this hand-drawn scene as a single Dragon Ball Z anime style comic book panel: ' +
+  'vibrant full-color illustration, bold linework, dynamic action, speed lines, energy auras, ' +
+  'dramatic lighting, manga shading, high quality, detailed expressive faces, cinematic composition.'
+
+const CONSTRAINTS =
+  'Output exactly one panel — no panel borders, no panel-within-panel grid, no comic page layout, ' +
+  'no speech bubbles, no captions, no dialogue text, no watermark, no signature. Always render in ' +
+  'full color — never black and white, never grayscale, never pencil or sketch shading.'
+
+const DRAWING_INSTRUCTION =
+  "Image 1 is a child's rough drawing — use it only for composition, pose, and scene layout. " +
+  'Do not copy its coloring or line quality.'
 
 const MAX_CHARACTERS_PER_SCENE = 4
 
-function assemblePrompt(narration: string, characters: { name: string; description: string }[]): string {
-  const characterBlock = characters.length
-    ? characters.map((c) => `${c.name}: ${c.description}`).join('. ') + '.'
-    : ''
+type SceneCharacter = { name: string; description: string; photo_url: string | null }
+
+function assemblePrompt(
+  narration: string,
+  characters: SceneCharacter[],
+  photoUrlByCharacterName: Map<string, string>,
+): string {
+  let nextImageIndex = 2
+  const referenceLines: string[] = []
+  const textOnlyLines: string[] = []
+
+  for (const c of characters) {
+    const photoUrl = c.photo_url ? photoUrlByCharacterName.get(c.name) : undefined
+    if (photoUrl) {
+      referenceLines.push(
+        `Image ${nextImageIndex} is a reference photo of ${c.name} — match their appearance ` +
+          `(face, hair, clothing) faithfully.`,
+      )
+      nextImageIndex += 1
+    } else {
+      textOnlyLines.push(`${c.name}: ${c.description}`)
+    }
+  }
+
   return [
     STYLE_PREFIX,
-    characterBlock,
+    CONSTRAINTS,
+    DRAWING_INSTRUCTION,
+    referenceLines.join(' '),
+    textOnlyLines.length ? `Other characters in the scene — ${textOnlyLines.join('. ')}.` : '',
     `Scene: ${narration}.`,
-    'High quality, detailed, expressive faces, cinematic composition.',
   ]
     .filter(Boolean)
     .join('\n')
@@ -60,12 +92,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    let characters: { name: string; description: string }[] = []
+    let characters: SceneCharacter[] = []
     const characterIds = page.characters_in_scene.slice(0, MAX_CHARACTERS_PER_SCENE)
     if (characterIds.length) {
       const { data: chars, error: charsError } = await supabaseAdmin
         .from('characters')
-        .select('name, description')
+        .select('name, description, photo_url')
         .in('id', characterIds)
       if (charsError) throw charsError
       characters = chars ?? []
@@ -76,20 +108,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .download(page.drawing_url)
     if (downloadError || !drawingBlob) throw new Error('could not load drawing')
 
-    // fal.ai's img2img model needs a fetchable URL, not our private bucket's
-    // signed URL (which can expire before the generation queue drains) — hand
-    // it fal's own storage instead of dealing with signed-URL expiry.
+    // fal.ai's models need fetchable URLs, not our private buckets' signed
+    // URLs (which can expire before the generation queue drains) — hand fal
+    // its own storage instead of dealing with signed-URL expiry.
     const drawingUrl = await fal.storage.upload(drawingBlob)
 
-    const prompt = assemblePrompt(page.enhanced_narration, characters)
+    const photoUrlByCharacterName = new Map<string, string>()
+    for (const c of characters) {
+      if (!c.photo_url) continue
+      const { data: photoBlob, error: photoError } = await supabaseAdmin.storage
+        .from('characters')
+        .download(c.photo_url)
+      if (photoError || !photoBlob) continue
+      photoUrlByCharacterName.set(c.name, await fal.storage.upload(photoBlob))
+    }
 
-    const result = await fal.subscribe('fal-ai/flux/dev/image-to-image', {
+    const prompt = assemblePrompt(page.enhanced_narration, characters, photoUrlByCharacterName)
+    const imageUrls = [drawingUrl, ...characters.map((c) => photoUrlByCharacterName.get(c.name)).filter(Boolean)] as string[]
+
+    const result = await fal.subscribe('fal-ai/flux-pro/kontext/multi', {
       input: {
-        image_url: drawingUrl,
+        image_urls: imageUrls,
         prompt,
-        strength: 0.65,
-        num_inference_steps: 28,
-        guidance_scale: 3.5,
       },
     })
 

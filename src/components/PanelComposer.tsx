@@ -193,7 +193,7 @@ export function PanelComposer({
           <span className="text-xs font-bold text-accent-green">
             {saveStatus === 'saved' ? 'saved ✓' : saveStatus === 'saving' ? 'saving...' : ''}
           </span>
-          <PlaybackButton text={narrationText} />
+          <PlaybackButton pageId={page.id} text={narrationText} />
         </div>
 
         <Button size="lg" variant="outline" disabled={generating} onClick={onRegenerate}>
