@@ -70,6 +70,7 @@ export function ShareViewer() {
     panelUrl: page.panel_url,
     displayText: page.narration_bar_text ?? page.enhanced_narration,
     speechBubbles: page.speech_bubbles,
+    narrationAudioUrl: page.narration_audio_url,
   }))
 
   return <ComicReader title={comic.title} pages={pages} />

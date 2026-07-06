@@ -39,7 +39,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const { data: pages, error: pagesError } = await supabaseAdmin
     .from('pages')
-    .select('id, page_order, panel_url, enhanced_narration, narration_bar_text, speech_bubbles')
+    .select(
+      'id, page_order, panel_url, enhanced_narration, narration_bar_text, speech_bubbles, narration_audio_url',
+    )
     .eq('comic_book_id', share.comic_book_id)
     .order('page_order', { ascending: true })
 
@@ -60,6 +62,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         enhanced_narration: page.enhanced_narration,
         narration_bar_text: page.narration_bar_text,
         speech_bubbles: page.speech_bubbles,
+        narration_audio_url: page.narration_audio_url
+          ? supabaseAdmin.storage.from('narration-audio').getPublicUrl(page.narration_audio_url).data.publicUrl
+          : null,
       })),
     },
   })

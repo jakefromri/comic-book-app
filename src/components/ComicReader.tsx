@@ -11,6 +11,7 @@ export type ReaderPage = {
   panelUrl: string | null
   displayText: string | null
   speechBubbles: SpeechBubble[]
+  narrationAudioUrl?: string | null
 }
 
 function ReaderBubble({ bubble }: { bubble: SpeechBubble }) {
@@ -152,7 +153,7 @@ export function ComicReader({
 
       {page && (
         <footer className="flex items-center justify-center p-4">
-          <PlaybackButton text={page.displayText} />
+          <PlaybackButton pageId={page.id} text={page.displayText} cachedAudioUrl={page.narrationAudioUrl ?? null} />
         </footer>
       )}
     </div>

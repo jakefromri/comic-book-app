@@ -11,6 +11,7 @@ export type SharedPage = {
   enhanced_narration: string | null
   narration_bar_text: string | null
   speech_bubbles: SpeechBubble[]
+  narration_audio_url: string | null
 }
 
 export type SharedComic = {
