@@ -104,7 +104,7 @@ export function Library() {
         title: comic.title,
         pages: pages.map((page) => ({
           id: page.id,
-          panelUrl: getPanelPublicUrl(page.panel_url),
+          panelUrl: getPanelPublicUrl(page.panel_url, page.updated_at),
           displayText: page.narration_bar_text ?? page.enhanced_narration,
           speechBubbles: getSpeechBubbles(page),
         })),
@@ -215,7 +215,7 @@ export function Library() {
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
           {comics.map((comic) => {
-            const cover = getPanelPublicUrl(comic.coverUrl)
+            const cover = getPanelPublicUrl(comic.coverUrl, comic.coverUpdatedAt)
             return (
               <Card key={comic.id} className="overflow-hidden">
                 <Link to={`/comics/${comic.id}`} className="block">

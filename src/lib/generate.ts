@@ -4,8 +4,10 @@ const GENERATION_TIMEOUT_MS = 30_000
 
 export class GenerationTimeoutError extends Error {}
 
-/** Calls /api/generate for the given page and returns the new panel_url (storage path). */
-export async function generatePanel(pageId: string): Promise<string> {
+export type GeneratedPanel = { panel_url: string; updated_at: string }
+
+/** Calls /api/generate for the given page and returns the new panel_url and updated_at. */
+export async function generatePanel(pageId: string): Promise<GeneratedPanel> {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), GENERATION_TIMEOUT_MS)
 
@@ -20,8 +22,7 @@ export async function generatePanel(pageId: string): Promise<string> {
       const body = (await res.json().catch(() => ({}))) as { error?: string }
       throw new Error(body.error ?? 'generation failed')
     }
-    const data = (await res.json()) as { panel_url: string }
-    return data.panel_url
+    return (await res.json()) as GeneratedPanel
   } catch (err) {
     if (err instanceof DOMException && err.name === 'AbortError') {
       throw new GenerationTimeoutError('generation is taking longer than expected')

@@ -147,13 +147,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .upload(panelPath, imageBuffer, { upsert: true, contentType: 'image/jpeg' })
     if (uploadError) throw uploadError
 
-    const { error: updateError } = await supabaseAdmin
+    const { data: updated, error: updateError } = await supabaseAdmin
       .from('pages')
       .update({ panel_url: panelPath })
       .eq('id', page.id)
+      .select('panel_url, updated_at')
+      .single()
     if (updateError) throw updateError
 
-    res.status(200).json({ panel_url: panelPath })
+    res.status(200).json({ panel_url: updated.panel_url, updated_at: updated.updated_at })
   } catch (err) {
     console.error('generate error', err)
     res.status(500).json({ error: "couldn't generate that panel — try again" })
