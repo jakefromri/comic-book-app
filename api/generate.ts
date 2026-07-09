@@ -37,8 +37,9 @@ function assemblePrompt(
     const photoUrl = c.photo_url ? photoUrlByCharacterName.get(c.name) : undefined
     if (photoUrl) {
       referenceLines.push(
-        `Image ${nextImageIndex} is a reference photo of ${c.name} — match their appearance ` +
-          `(face, hair, clothing) faithfully.`,
+        `Image ${nextImageIndex} is a reference photo of ${c.name} — match their face, hair, and ` +
+          `clothing design only. Do not copy their pose, framing, or expression from this photo; ` +
+          `their pose and action come from the scene drawing and narration.`,
       )
       nextImageIndex += 1
     } else {
