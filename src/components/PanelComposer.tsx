@@ -133,7 +133,7 @@ export function PanelComposer({
     if (editingBubbleId === id) setEditingBubbleId(null)
   }
 
-  const panelUrl = getPanelPublicUrl(page.panel_url)
+  const panelUrl = getPanelPublicUrl(page.panel_url, page.updated_at)
 
   return (
     <div className="flex flex-col items-center gap-3 lg:grid lg:grid-cols-[60%_40%] lg:items-start lg:gap-6">

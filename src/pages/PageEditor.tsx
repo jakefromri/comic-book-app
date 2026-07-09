@@ -193,8 +193,8 @@ export function PageEditor() {
     setGenerateError(null)
     setGeneratingMessageIndex(0)
     try {
-      const panelPath = await generatePanel(page.id)
-      setPage({ ...page, panel_url: panelPath })
+      const { panel_url, updated_at } = await generatePanel(page.id)
+      setPage({ ...page, panel_url, updated_at })
     } catch (err) {
       setGenerateError(
         err instanceof GenerationTimeoutError

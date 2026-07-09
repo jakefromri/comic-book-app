@@ -3,7 +3,7 @@ import type { Tables } from '@/types/database'
 
 export type ComicBook = Tables<'comic_books'>
 
-export type ComicBookWithCover = ComicBook & { coverUrl: string | null }
+export type ComicBookWithCover = ComicBook & { coverUrl: string | null; coverUpdatedAt: string | null }
 
 export async function listComics(userId: string): Promise<ComicBookWithCover[]> {
   const { data: comics, error } = await supabase
@@ -15,22 +15,23 @@ export async function listComics(userId: string): Promise<ComicBookWithCover[]> 
 
   const { data: pages, error: pagesError } = await supabase
     .from('pages')
-    .select('comic_book_id, panel_url, page_order')
+    .select('comic_book_id, panel_url, page_order, updated_at')
     .eq('user_id', userId)
     .not('panel_url', 'is', null)
     .order('page_order', { ascending: true })
   if (pagesError) throw pagesError
 
-  const coverByComic = new Map<string, string>()
+  const coverByComic = new Map<string, { panel_url: string; updated_at: string }>()
   for (const page of pages ?? []) {
     if (page.panel_url && !coverByComic.has(page.comic_book_id)) {
-      coverByComic.set(page.comic_book_id, page.panel_url)
+      coverByComic.set(page.comic_book_id, { panel_url: page.panel_url, updated_at: page.updated_at })
     }
   }
 
   return (comics ?? []).map((comic) => ({
     ...comic,
-    coverUrl: coverByComic.get(comic.id) ?? null,
+    coverUrl: coverByComic.get(comic.id)?.panel_url ?? null,
+    coverUpdatedAt: coverByComic.get(comic.id)?.updated_at ?? null,
   }))
 }
 

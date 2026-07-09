@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Plus, Trash2, GripVertical, ImageIcon } from 'lucide-react'
 import {
@@ -39,11 +39,13 @@ function SortablePageCard({
   index,
   onOpen,
   onDelete,
+  cardRef,
 }: {
   page: Page
   index: number
   onOpen: () => void
   onDelete: () => void
+  cardRef?: (node: HTMLDivElement | null) => void
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: page.id,
@@ -53,10 +55,17 @@ function SortablePageCard({
     transition,
     opacity: isDragging ? 0.5 : 1,
   }
-  const cover = getPanelPublicUrl(page.panel_url)
+  const cover = getPanelPublicUrl(page.panel_url, page.updated_at)
 
   return (
-    <Card ref={setNodeRef} style={style} className="overflow-hidden">
+    <Card
+      ref={(node) => {
+        setNodeRef(node)
+        cardRef?.(node)
+      }}
+      style={style}
+      className="overflow-hidden"
+    >
       <div className="relative">
         <button
           type="button"
@@ -102,6 +111,8 @@ export function Comic() {
   const [error, setError] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Page | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [newestPageId, setNewestPageId] = useState<string | null>(null)
+  const newestCardRef = useRef<HTMLDivElement | null>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -136,6 +147,7 @@ export function Comic() {
       const nextOrder = pages.length ? Math.max(...pages.map((p) => p.page_order)) + 1 : 0
       const page = await addPage(user.id, id, nextOrder)
       setPages((prev) => [...prev, page])
+      setNewestPageId(page.id)
     } catch {
       setError("couldn't add a page — try again")
     } finally {
@@ -159,6 +171,11 @@ export function Comic() {
       setSubmitting(false)
     }
   }
+
+  useEffect(() => {
+    if (!newestPageId) return
+    newestCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [newestPageId])
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
@@ -230,6 +247,9 @@ export function Comic() {
                   index={index}
                   onOpen={() => navigate(`/comics/${comic.id}/pages/${page.id}`)}
                   onDelete={() => setDeleteTarget(page)}
+                  cardRef={
+                    page.id === newestPageId ? (node) => (newestCardRef.current = node) : undefined
+                  }
                 />
               ))}
             </div>
