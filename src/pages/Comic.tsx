@@ -55,7 +55,7 @@ function SortablePageCard({
     transition,
     opacity: isDragging ? 0.5 : 1,
   }
-  const cover = getPanelPublicUrl(page.panel_url)
+  const cover = getPanelPublicUrl(page.panel_url, page.updated_at)
 
   return (
     <Card

@@ -17,9 +17,15 @@ export function getSpeechBubbles(page: Page): SpeechBubble[] {
   return Array.isArray(page.speech_bubbles) ? (page.speech_bubbles as unknown as SpeechBubble[]) : []
 }
 
-export function getPanelPublicUrl(path: string | null): string | null {
+/**
+ * Panel storage paths are fixed per page (regenerate overwrites the same file), so the
+ * public URL alone doesn't change across regenerations. Pass a value that does change —
+ * e.g. the page's `updated_at` — to bust the browser/CDN cache.
+ */
+export function getPanelPublicUrl(path: string | null, version?: string | null): string | null {
   if (!path) return null
-  return supabase.storage.from('panels').getPublicUrl(path).data.publicUrl
+  const publicUrl = supabase.storage.from('panels').getPublicUrl(path).data.publicUrl
+  return version ? `${publicUrl}?v=${encodeURIComponent(version)}` : publicUrl
 }
 
 export async function getPage(pageId: string): Promise<Page> {
