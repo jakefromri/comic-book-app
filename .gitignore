@@ -16,3 +16,4 @@ adversarial-review.md
 test-plan.md
 qa-report.md
 qa-screenshots/
+.env.local.hosted-dev-backup
